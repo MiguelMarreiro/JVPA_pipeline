@@ -1,7 +1,7 @@
 from docx import Document
 import streamlit as st
 import re
-
+import pandas as pd
 
 def extract_text_from_word(file):
     """Extract all text from a Word document."""
@@ -19,6 +19,13 @@ def article_split(text):
     return [a.strip() for a in articles if a.strip()]
 
 
+def data_extract(articles):
+    csv = []
+    for article in articles:
+        [title, body] = re.split(r'(?:\n\s*){3,}', article)
+        csv.append({"Title": title, "Body": body})
+    return csv 
+
 # --- Streamlit app ---
 st.title("📄 Separador Automático de artigos")
 st.write("Faça upload do documentoWord (.docx) para separar automaticamente artigos separados por 3 linhas brancas")
@@ -29,9 +36,18 @@ if uploaded_file:
     text = extract_text_from_word(uploaded_file)
     articles = article_split(text)
 
+    data = data_extract(articles)
+
+    df = pd.DataFrame(data)
+
+    # Step 4: Display the DataFrame as a CSV table
+    st.success(f"✅ Extracted {len(df)} articles.")
+    st.dataframe(df)
+    
     st.success(f"✅ encontrados {len(articles)} artigos.")
     for i, article in enumerate(articles, 1):
         st.subheader(f"Artigo {i}")
         st.text_area(f"Conteudo {i}", article, height=200)
+
 else:
     st.info("Escolha um documento .docx para começar.")
