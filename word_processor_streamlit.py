@@ -45,11 +45,6 @@ if uploaded_file:
     st.success(f"✅ encontrados {len(articles)} artigos.")
     st.dataframe(df)
     
-   
-    for i, article in enumerate(articles, 1):
-        st.subheader(f"Artigo {i}")
-        st.text_area(f"Conteudo {i}", article, height=200)
-
     #Generate CSV for download
     csv_buffer = StringIO()
     df.to_csv(csv_buffer, index=False)
@@ -61,6 +56,12 @@ if uploaded_file:
         file_name="articles.csv",
         mime="text/csv"
     )
+
+   
+    for i, article in enumerate(articles, 1):
+        st.subheader(f"Artigo {i}")
+        st.text_area(f"Conteudo {i}", article, height=200)
+
 
 else:
     st.info("Escolha um documento .docx para começar.")
