@@ -2,6 +2,7 @@ from docx import Document
 import streamlit as st
 import re
 import pandas as pd
+from io import StringIO
 
 def extract_text_from_word(file):
     """Extract all text from a Word document."""
@@ -40,14 +41,26 @@ if uploaded_file:
 
     df = pd.DataFrame(data)
 
-    # Step 4: Display the DataFrame as a CSV table
-    st.success(f"✅ Extracted {len(df)} articles.")
+    #Display the DataFrame as a CSV table
+    st.success(f"✅ encontrados {len(articles)} artigos.")
     st.dataframe(df)
     
-    st.success(f"✅ encontrados {len(articles)} artigos.")
+   
     for i, article in enumerate(articles, 1):
         st.subheader(f"Artigo {i}")
         st.text_area(f"Conteudo {i}", article, height=200)
+
+    #Generate CSV for download
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer, index=False)
+    csv_data = csv_buffer.getvalue()
+
+    st.download_button(
+        label="💾 Download CSV",
+        data=csv_data,
+        file_name="articles.csv",
+        mime="text/csv"
+    )
 
 else:
     st.info("Escolha um documento .docx para começar.")
