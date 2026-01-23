@@ -7,6 +7,11 @@ import os
 from odf.opendocument import load
 from odf.text import P, H, LineBreak
 
+ARTICLE_START = "==Artigo_inicio=="
+METADATA_FIELDS = ["Titulo", "SubTitulo", "Autor", "Data", "Tag", "Pag", "Numero"]
+
+
+
 def extract_text_from_word(file, file_extension):
     """Extract all text from a Word document."""
     if file_extension == ".docx":
@@ -14,23 +19,75 @@ def extract_text_from_word(file, file_extension):
         text = [p.text for p in doc.paragraphs]
         return '\n'.join(text)
     elif file_extension == ".odt":
+        # doc = load(file)
+        # paragraphs = doc.getElementsByType(P)
+        # text = (paragraph.firstChild.data if paragraph.firstChild else "" for paragraph in paragraphs)
+        
+        # return "\n".join(text)
+
+
+        """
+        Extract text from ODT recursively. Collects <text:p> and <text:h> text nodes in document order.
+        """
         doc = load(file)
+        lines = []
         paragraphs = doc.getElementsByType(P)
-        text = (paragraph.firstChild.data if paragraph.firstChild else "" for paragraph in paragraphs)
-        return "\n".join(text)
+        for paragraph in paragraphs:
+    
+            text_str = "".join(getattr(n, "data", "") for n in paragraph.childNodes).strip()
+            if text_str:
+                lines.append(text_str)
+
+
+    return "\n".join(lines)
 
 def article_split(text):
-    """Split text where there are 3 or more empty lines."""
-    articles = re.split(r'(?:\n\s*){4,}', text)
-    return [a.strip() for a in articles if a.strip()]
+    """Split articles and extract body and metadata."""
+    raw_articles = text.split(ARTICLE_START)
+    articles = []
+
+    # loops articles
+    for raw_article in raw_articles:
+        raw_article = raw_article.strip()
+        if not raw_article:
+            continue #skip empty articles
+
+        lines = [line.strip() for line in raw_article.splitlines() if line.strip()]
+        
+        metadata = {}
+        body_lines = []
+
+        # loops lines to find metadata fields to add them to the metadat dictionary
+        for line in lines:
+            # print(line)
+            if any(line.startswith(f"#{field}:") for field in METADATA_FIELDS):
+                key, value = line.split(":", 1)
+                
+                field = key.lstrip("#").rstrip()
+                metadata[field] = value.strip()
+                
+            # everything else appends to body
+            else:
+                body_lines.append(line)
+
+        metadata["BODY"] = "\n".join(body_lines).strip()
+
+        # Fill missing metadata keys with empty string
+        for field in METADATA_FIELDS:
+            if field not in metadata:
+                metadata[field] = ""
+
+        articles.append(metadata)
+
+    return articles
 
 
-def data_extract(articles):
-    csv = []
-    for article in articles:
-        [title, body] = re.split(r'(?:\n\s*){3,}', article)
-        csv.append({"Title": title, "Body": body})
-    return csv 
+# def data_extract(articles):
+#     csv = []
+#     for article in articles:
+#         [title, body] = re.split(r'(?:\n\s*){3,}', article)
+#         csv.append({"Title": title, "Body": body})
+#     return csv 
 
 
 
@@ -48,9 +105,9 @@ if __name__ == "__main__":
         text = extract_text_from_word(uploaded_file, file_extension)
         articles = article_split(text)
 
-        data = data_extract(articles)
+        # data = data_extract(articles)
 
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(articles)
 
         #Display the DataFrame as a CSV table
         st.success(f"✅ encontrados {len(articles)} artigos.")
@@ -71,7 +128,7 @@ if __name__ == "__main__":
     
         for i, article in enumerate(articles, 1):
             st.subheader(f"Artigo {i}")
-            st.text_area(f"Conteudo {i}", article, height=200)
+            st.text_area(f"{article["Titulo"]}", article["BODY"], height=200)
 
 
     else:
