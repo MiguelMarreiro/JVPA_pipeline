@@ -7,8 +7,10 @@ import os
 from odf.opendocument import load
 from odf.text import P, H, LineBreak
 
+
+#Global definition of article delimiters and field identifiers
 ARTICLE_START = "==Artigo_inicio=="
-METADATA_FIELDS = ["Titulo", "SubTitulo", "Autor", "Data", "Tag", "Pag", "Numero"]
+METADATA_FIELDS = ["Titulo", "SubTitulo", "Autor", "Data", "Tag", "Pag", "Numero", "Imagens", "Rodape"]
 
 
 
@@ -19,21 +21,13 @@ def extract_text_from_word(file, file_extension):
         text = [p.text for p in doc.paragraphs]
         return '\n'.join(text)
     elif file_extension == ".odt":
-        # doc = load(file)
-        # paragraphs = doc.getElementsByType(P)
-        # text = (paragraph.firstChild.data if paragraph.firstChild else "" for paragraph in paragraphs)
-        
-        # return "\n".join(text)
-
-
         """
-        Extract text from ODT recursively. Collects <text:p> and <text:h> text nodes in document order.
+        Extract text from ODT. Collects <text:p> text nodes in document order.
         """
         doc = load(file)
         lines = []
         paragraphs = doc.getElementsByType(P)
         for paragraph in paragraphs:
-    
             text_str = "".join(getattr(n, "data", "") for n in paragraph.childNodes).strip()
             if text_str:
                 lines.append(text_str)
