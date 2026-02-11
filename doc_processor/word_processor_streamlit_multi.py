@@ -64,7 +64,8 @@ def article_split(text):
             else:
                 body_lines.append(line)
         try:
-            (metadata["BODY"], metadata["Rodape"]) = ("\n".join(body_lines).strip()).split("#Rodape:", 1)
+            (metadata["BODY"], metadata["Rodape"]) = ("\n".join(body_lines).strip()).split("<p>#Rodape:", 1)
+            metadata["Rodape"] = "<p>" + metadata["Rodape"]
         except:
             metadata["BODY"] = "\n".join(body_lines).strip()
 
