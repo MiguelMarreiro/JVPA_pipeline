@@ -18,7 +18,7 @@ def extract_text_from_word(file, file_extension):
     """Extract all text from a Word document."""
     if file_extension == ".docx":
         doc = Document(file)
-        text = [paragraph_to_html(p).removeprefix("<p>").removesuffix("</p>") for p in doc.paragraphs]
+        text = [paragraph_to_html(p) for p in doc.paragraphs]
         return '\n'.join(text)
     elif file_extension == ".odt":
         """
@@ -89,7 +89,10 @@ def paragraph_to_html(paragraph):
         if run.underline:
             text = f"<u>{text}</u>"
         html += text
-    return f"<p>{html}</p>"
+    if html.startswith(ARTICLE_START) or any(html.startswith(f"#{field}:") for field in METADATA_FIELDS):
+        return html
+    else:
+        return f"<p>{html}</p>"
 
 # def data_extract(articles):
 #     csv = []
