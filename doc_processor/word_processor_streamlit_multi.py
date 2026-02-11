@@ -125,6 +125,8 @@ if __name__ == "__main__":
         for i, article in enumerate(articles, 1):
             st.subheader(f"Artigo {i}")
             st.text_area(f"{article["Titulo"]}", article["BODY"], height=200)
+            if article["Rodape"] != "":
+                st.text_area("Rodapé", article["Rodape"], height=60)
 
 
     else:
