@@ -18,7 +18,7 @@ def extract_text_from_word(file, file_extension):
     """Extract all text from a Word document."""
     if file_extension == ".docx":
         doc = Document(file)
-        text = [p.text for p in doc.paragraphs]
+        text = [paragraph_to_html(p) for p in doc.paragraphs]
         return '\n'.join(text)
     elif file_extension == ".odt":
         """
@@ -77,6 +77,19 @@ def article_split(text):
 
     return articles
 
+
+def paragraph_to_html(paragraph):
+    html = ""
+    for run in paragraph.runs:
+        text = run.text
+        if run.bold:
+            text = f"<b>{text}</b>"
+        if run.italic:
+            text = f"<i>{text}</i>"
+        if run.underline:
+            text = f"<u>{text}</u>"
+        html += text
+    return f"<p>{html}</p>"
 
 # def data_extract(articles):
 #     csv = []
