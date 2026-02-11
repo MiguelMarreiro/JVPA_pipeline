@@ -53,7 +53,6 @@ def article_split(text):
 
         # loops lines to find metadata fields to add them to the metadat dictionary
         for line in lines:
-            # print(line)
             if any(line.startswith(f"#{field}:") for field in METADATA_FIELDS):
                 key, value = line.split(":", 1)
                 
@@ -81,15 +80,39 @@ def article_split(text):
 
 def paragraph_to_html(paragraph):
     html = ""
-    for run in paragraph.runs:
-        text = run.text
-        if run.bold:
-            text = f"<b>{text}</b>"
-        if run.italic:
-            text = f"<i>{text}</i>"
-        if run.underline:
-            text = f"<u>{text}</u>"
-        html += text
+    ns = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
+          'r': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'}
+    
+    # Process paragraph children (mix of runs and hyperlinks)
+    for child in paragraph._element:
+        # Handle hyperlink elements that contain runs
+        if child.tag.endswith('hyperlink'):
+            rId = child.get('{%s}id' % ns['r'])
+            if rId:
+                try:
+                    url = paragraph.part.rels[rId].target_ref
+                    # Extract text from all runs inside the hyperlink
+                    link_text = "".join(run.text for run in child.findall('.//w:r', ns) if run.text)
+                    if link_text:
+                        html += f'<a href="{url}">{link_text}</a>'
+                except (KeyError, AttributeError):
+                    pass
+        # Handle regular runs
+        elif child.tag.endswith('r'):
+            run_elem = child
+            text = ""
+            for t_elem in run_elem.findall('.//w:t', ns):
+                text += t_elem.text or ""
+            
+            if text:
+                if run_elem.find('.//w:b', ns) is not None:
+                    text = f"<b>{text}</b>"
+                if run_elem.find('.//w:i', ns) is not None:
+                    text = f"<i>{text}</i>"
+                if run_elem.find('.//w:u', ns) is not None:
+                    text = f"<u>{text}</u>"
+                html += text
+    
     if html.startswith(ARTICLE_START) or any(html.startswith(f"#{field}:") for field in METADATA_FIELDS):
         return html
     else:
