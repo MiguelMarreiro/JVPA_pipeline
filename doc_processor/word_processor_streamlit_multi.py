@@ -10,7 +10,7 @@ from odf.text import P, H, LineBreak
 
 #Global definition of article delimiters and field identifiers
 ARTICLE_START = "==Artigo_inicio=="
-METADATA_FIELDS = ["Titulo", "SubTitulo", "Autor", "Data", "Tag", "Pag", "Numero", "Imagens", "Rodape"]
+METADATA_FIELDS = ["Titulo", "SubTitulo", "Autor", "Data", "Tag", "Pag", "Numero", "Imagens"]
 
 
 
@@ -63,8 +63,10 @@ def article_split(text):
             # everything else appends to body
             else:
                 body_lines.append(line)
-
-        metadata["BODY"] = "\n".join(body_lines).strip()
+        try:
+            (metadata["BODY"], metadata["Rodape"]) = ("\n".join(body_lines).strip()).split("#Rodape:", 1)
+        except:
+            metadata["BODY"] = "\n".join(body_lines).strip()
 
         # Fill missing metadata keys with empty string
         for field in METADATA_FIELDS:
