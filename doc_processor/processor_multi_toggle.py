@@ -159,7 +159,19 @@ if __name__ == "__main__":
             help="Separe os campos por vírgula"
         )
         METADATA_FIELDS = [field.strip() for field in metadata_fields_input.split(",")]
-
+    else:
+        st.subheader("Configuração Padrão")
+        st.text_input(
+            "Delimitador de Artigo",
+            value=ARTICLE_START,
+            disabled=True
+        )
+        st.text_area(
+            "Campos de Metadados",
+            value=", ".join(METADATA_FIELDS),
+            height=100,
+            disabled=True
+        )
     uploaded_file = st.file_uploader("Escolha um documento .docx", type=["docx", "odt"])
 
     if uploaded_file:
