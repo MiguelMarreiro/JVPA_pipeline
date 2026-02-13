@@ -18,7 +18,10 @@ def extract_text_from_word(file, file_extension):
     """Extract all text from a Word document."""
     if file_extension == ".docx":
         doc = Document(file)
-        text = [paragraph_to_html(p) for p in doc.paragraphs]
+        if output_format == "HTML":
+            text = [paragraph_to_html(p) for p in doc.paragraphs]
+        else:
+            text = [p.text for p in doc.paragraphs]
         return '\n'.join(text)
     elif file_extension == ".odt":
         """
@@ -132,9 +135,10 @@ if __name__ == "__main__":
     st.title("📄 Separador Automático de artigos")
     st.write("Faça upload do documento.docx ou .odt para separar automaticamente artigos separados por 3 linhas brancas")
 
+    output_format = st.radio("Escolha o formato de saída:", ("Texto", "HTML"))
     uploaded_file = st.file_uploader("Escolha um documento .docx", type=["docx", "odt"])
     
-
+    
     if uploaded_file:
         filename, file_extension = os.path.splitext(uploaded_file.name)
 
