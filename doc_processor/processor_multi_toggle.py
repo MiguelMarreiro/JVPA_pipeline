@@ -124,60 +124,6 @@ def paragraph_to_html(paragraph):
     else:
         return f"<p>{html}</p>"
 
-# def data_extract(articles):
-#     csv = []
-#     for article in articles:
-#         [title, body] = re.split(r'(?:\n\s*){3,}', article)
-#         csv.append({"Title": title, "Body": body})
-#     return csv 
-
-
-
-# if __name__ == "__main__":
-#     # --- Streamlit app ---
-#     st.title("📄 Separador Automático de artigos")
-#     st.write("Faça upload do documento.docx ou .odt para separar automaticamente artigos separados por 3 linhas brancas")
-
-#     output_format = st.radio("Escolha o formato de saída:", ("Texto", "HTML"))
-#     uploaded_file = st.file_uploader("Escolha um documento .docx", type=["docx", "odt"])
-    
-    
-#     if uploaded_file:
-#         filename, file_extension = os.path.splitext(uploaded_file.name)
-
-#         text = extract_text_from_word(uploaded_file, file_extension)
-#         articles = article_split(text)
-
-#         # data = data_extract(articles)
-
-#         df = pd.DataFrame(articles)
-
-#         #Display the DataFrame as a CSV table
-#         st.success(f"✅ encontrados {len(articles)} artigos.")
-#         st.dataframe(df)
-        
-#         #Generate CSV for download
-#         csv_buffer = StringIO()
-#         df.to_csv(csv_buffer, index=False)
-#         csv_data = csv_buffer.getvalue()
-
-#         st.download_button(
-#             label="💾 Download CSV",
-#             data=csv_data,
-#             file_name="articles.csv",
-#             mime="text/csv"
-#         )
-
-    
-#         for i, article in enumerate(articles, 1):
-#             st.subheader(f"Artigo {i}")
-#             st.text_area(f"{article["Titulo"]}", article["BODY"], height=200)
-#             if "Rodape" in article.keys():
-#                 st.text_area("Rodapé", article["Rodape"], height=60)
-
-
-#     else:
-#         st.info("Escolha um documento .docx para começar.")
 
 if __name__ == "__main__":
     # --- Streamlit app ---
@@ -185,6 +131,30 @@ if __name__ == "__main__":
     st.write("Faça upload do documento.docx ou .odt para separar automaticamente artigos separados por 3 linhas brancas")
 
     output_format = st.radio("Escolha o formato de saída:", ("Texto", "HTML"), key="output_format")
+    
+    toggle_option = st.radio("Modo de delimitadores:", ("Padrão", "Personalizado"), key="toggle_option")
+
+    if toggle_option == "Personalizado":
+        st.subheader("Configuração Personalizada")
+        
+        article_start_input = st.text_input(
+            "Delimitador de Artigo",
+            value=ARTICLE_START,
+            placeholder="Ex: ==Artigo_inicio==",
+            help="Texto que marca o início de um novo artigo"
+        )
+        ARTICLE_START = article_start_input
+        
+        metadata_fields_input = st.text_area(
+            "Campos de Metadados",
+            value=", ".join(METADATA_FIELDS),
+            placeholder="Ex: Titulo, SubTitulo, Autor, Data, Tag, Pag, Numero, Imagens",
+            height=100,
+            help="Separe os campos por vírgula"
+        )
+        METADATA_FIELDS = [field.strip() for field in metadata_fields_input.split(",")]
+    
+    
     uploaded_file = st.file_uploader("Escolha um documento .docx", type=["docx", "odt"])
     
     
