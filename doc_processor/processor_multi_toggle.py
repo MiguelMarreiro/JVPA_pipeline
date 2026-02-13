@@ -128,7 +128,7 @@ def paragraph_to_html(paragraph):
 if __name__ == "__main__":
     # --- Streamlit app ---
     st.title("📄 Separador Automático de artigos")
-    st.write("Faça upload do documento.docx ou .odt para separar automaticamente artigos separados por 3 linhas brancas")
+    st.write("Faça upload do documento.docx ou .odt para separar automaticamente artigos")
 
     output_format = st.radio("Escolha o formato de saída:", ("Texto", "HTML"), key="output_format")
     
