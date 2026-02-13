@@ -10,8 +10,7 @@ from odf.text import P, H, LineBreak
 
 #Global definition of article delimiters and field identifiers
 ARTICLE_START = "==Artigo_inicio=="
-METADATA_FIELDS = ["Titulo", "SubTitulo", "Autor", "Data", "Tag", "Pag", "Numero", "Imagens"]
-
+METADATA_FIELDS = ["#Titulo", "#SubTitulo", "#Autor", "#Data", "#Tag", "#Pag", "#Numero", "#Imagens"]
 
 
 def extract_text_from_word(file, file_extension):
@@ -39,7 +38,10 @@ def extract_text_from_word(file, file_extension):
     return "\n".join(lines)
 
 def article_split(text):
-    """Split articles and extract body and metadata."""
+    """Split articles and extract body and metadata.
+    This version treats lines like 'Titulo: valor' (without leading '#') as metadata.
+    It also accepts legacy '#Titulo: valor' forms.
+    """
     raw_articles = text.split(ARTICLE_START)
     articles = []
 
@@ -47,32 +49,35 @@ def article_split(text):
     for raw_article in raw_articles:
         raw_article = raw_article.strip()
         if not raw_article:
-            continue #skip empty articles
+            continue  # skip empty articles
 
         lines = [line.strip() for line in raw_article.splitlines() if line.strip()]
-        
+
         metadata = {}
         body_lines = []
 
-        # loops lines to find metadata fields to add them to the metadat dictionary
+        # loops lines to find metadata fields to add them to the metadata dictionary
         for line in lines:
-            if any(line.startswith(f"#{field}:") for field in METADATA_FIELDS):
+            is_metadata = any(line.startswith(f"{field}:") for field in METADATA_FIELDS)
+            if is_metadata:
                 key, value = line.split(":", 1)
-                
-                field = key.lstrip("#").rstrip()
+                field = key.strip()
                 metadata[field] = value.strip()
-                
-            # everything else appends to body
             else:
                 body_lines.append(line)
+
+        # join body lines and try to split Rodape using the appropriate marker
+        body_text = "\n".join(body_lines).strip()
         try:
-            if output_format == "HTML":
-                (metadata["BODY"], metadata["Rodape"]) = ("\n".join(body_lines).strip()).split("<p>#Rodape:", 1)
-                metadata["Rodape"] = "<p>" + metadata["Rodape"]
+            split_marker = "<p>#Rodape:" if output_format == "HTML" else "#Rodape:"
+            if split_marker in body_text:
+                body_part, rodape_part = body_text.split(split_marker, 1)
+                metadata["BODY"] = body_part.strip()
+                metadata["Rodape"] = ("<p>" + rodape_part) if output_format == "HTML" else rodape_part.strip()
             else:
-                (metadata["BODY"], metadata["Rodape"]) = ("\n".join(body_lines).strip()).split("#Rodape:", 1)
-        except:
-            metadata["BODY"] = "\n".join(body_lines).strip()
+                metadata["BODY"] = body_text
+        except Exception:
+            metadata["BODY"] = body_text
 
         # Fill missing metadata keys with empty string
         for field in METADATA_FIELDS:
@@ -88,7 +93,7 @@ def paragraph_to_html(paragraph):
     html = ""
     ns = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
           'r': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'}
-    
+
     # Process paragraph children (mix of runs and hyperlinks)
     for child in paragraph._element:
         # Handle hyperlink elements that contain runs
@@ -109,7 +114,7 @@ def paragraph_to_html(paragraph):
             text = ""
             for t_elem in run_elem.findall('.//w:t', ns):
                 text += t_elem.text or ""
-            
+
             if text:
                 if run_elem.find('.//w:b', ns) is not None:
                     text = f"<b>{text}</b>"
@@ -118,8 +123,9 @@ def paragraph_to_html(paragraph):
                 if run_elem.find('.//w:u', ns) is not None:
                     text = f"<u>{text}</u>"
                 html += text
-    
-    if html.startswith(ARTICLE_START) or any(html.startswith(f"#{field}:") for field in METADATA_FIELDS):
+
+    # treat paragraphs that are article start or metadata lines without leading '#'
+    if html.startswith(ARTICLE_START) or any(html.startswith(f"{field}:") for field in METADATA_FIELDS):
         return html
     else:
         return f"<p>{html}</p>"
@@ -128,15 +134,15 @@ def paragraph_to_html(paragraph):
 if __name__ == "__main__":
     # --- Streamlit app ---
     st.title("📄 Separador Automático de artigos")
-    st.write("Faça upload do documento.docx ou .odt para separar automaticamente artigos")
+    st.write("Faça upload do documento .docx ou .odt para separar automaticamente artigos")
 
     output_format = st.radio("Escolha o formato de saída:", ("Texto", "HTML"), key="output_format")
-    
+
     toggle_option = st.radio("Modo de delimitadores:", ("Padrão", "Personalizado"), key="toggle_option")
 
     if toggle_option == "Personalizado":
         st.subheader("Configuração Personalizada")
-        
+
         article_start_input = st.text_input(
             "Delimitador de Artigo",
             value=ARTICLE_START,
@@ -144,35 +150,31 @@ if __name__ == "__main__":
             help="Texto que marca o início de um novo artigo"
         )
         ARTICLE_START = article_start_input
-        
+
         metadata_fields_input = st.text_area(
             "Campos de Metadados",
             value=", ".join(METADATA_FIELDS),
-            placeholder="Ex: Titulo, SubTitulo, Autor, Data, Tag, Pag, Numero, Imagens",
+            placeholder="Ex: #Titulo, #SubTitulo, #Autor, #Data, #Tag, #Pag, #Numero, #Imagens",
             height=100,
             help="Separe os campos por vírgula"
         )
         METADATA_FIELDS = [field.strip() for field in metadata_fields_input.split(",")]
-    
-    
+
     uploaded_file = st.file_uploader("Escolha um documento .docx", type=["docx", "odt"])
-    
-    
+
     if uploaded_file:
         filename, file_extension = os.path.splitext(uploaded_file.name)
 
         text = extract_text_from_word(uploaded_file, file_extension)
         articles = article_split(text)
 
-        # data = data_extract(articles)
-
         df = pd.DataFrame(articles)
 
-        #Display the DataFrame as a CSV table
+        # Display the DataFrame as a CSV table
         st.success(f"✅ encontrados {len(articles)} artigos.")
         st.dataframe(df)
-        
-        #Generate CSV for download
+
+        # Generate CSV for download
         csv_buffer = StringIO()
         df.to_csv(csv_buffer, index=False)
         csv_data = csv_buffer.getvalue()
@@ -184,13 +186,12 @@ if __name__ == "__main__":
             mime="text/csv"
         )
 
-    
         for i, article in enumerate(articles, 1):
             st.subheader(f"Artigo {i}")
-            st.text_area(f"{article["Titulo"]}", article["BODY"], height=200)
-            if "Rodape" in article.keys():
-                st.text_area("Rodapé", article["Rodape"], height=60)
+            st.text_area(article.get("Titulo", ""), article.get("BODY", ""), height=200)
 
+            if "Rodape" in article.keys() and article.get("Rodape"):
+                st.text_area("Rodapé", article.get("Rodape", ""), height=60)
 
     else:
         st.info("Escolha um documento .docx para começar.")
