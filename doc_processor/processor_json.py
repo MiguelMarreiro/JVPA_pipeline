@@ -69,7 +69,16 @@ if __name__ == "__main__":
         st.write(f"Data da Edição: {edition_date}")
         st.write(f"Número da Edição: {edition_number}")
 
-        
+        # Generate CSV file for download
+        csv_file = generate_csv(csv_data)
+        with open(csv_file, "rb") as f:
+            st.download_button(
+                label="Download CSV",
+                data=f,
+                file_name="articles_output.csv",
+                mime="text/csv"
+            )
+
         
         # Display ficha tecnica and editorial
         st.subheader("Ficha Técnica")
@@ -84,15 +93,6 @@ if __name__ == "__main__":
         df = pd.DataFrame(csv_data)
         st.dataframe(df)
 
-        # Generate CSV file for download
-        csv_file = generate_csv(csv_data)
-        with open(csv_file, "rb") as f:
-            st.download_button(
-                label="Download CSV",
-                data=f,
-                file_name="articles_output.csv",
-                mime="text/csv"
-            )
 
         # Display article bodies
         st.subheader("Artigos")
