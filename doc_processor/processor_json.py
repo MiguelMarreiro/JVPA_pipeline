@@ -11,6 +11,7 @@ def process_json(input_json):
     data = json.loads(input_json)
 
     # Extract fields
+    edition_title = data.get("edition_title", "")
     edition_date = data.get("edition_date", "")
     edition_number = data.get("edition_number", "")
     ficha_tecnica = data.get("ficha_tecnica", "")
@@ -21,6 +22,7 @@ def process_json(input_json):
     csv_data = []
     for article in articles:
         csv_data.append({
+            "edition_title": edition_title,
             "edition_date": edition_date,
             "edition_number": edition_number,
             "titulo": article.get("titulo", ""),
@@ -32,7 +34,7 @@ def process_json(input_json):
             "corpo": article.get("corpo", "")
         })
 
-    return ficha_tecnica, editorial, articles, csv_data
+    return edition_title, edition_number, edition_date, ficha_tecnica, editorial, articles, csv_data
 
 def generate_csv(csv_data):
     """
@@ -41,7 +43,7 @@ def generate_csv(csv_data):
     csv_file = "articles_output.csv"
     with open(csv_file, mode="w", newline="", encoding="utf-8") as csvfile:
         fieldnames = [
-            "edition_date", "edition_number", "titulo", "subtitulo", "autor",
+            "edition_title", "edition_date", "edition_number", "titulo", "subtitulo", "autor",
             "paginas", "num_imagens", "tags", "corpo"
         ]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -59,8 +61,16 @@ if __name__ == "__main__":
     if uploaded_file is not None:
         # Read and process the uploaded JSON file
         input_json = uploaded_file.read().decode("utf-8")
-        ficha_tecnica, editorial, articles, csv_data = process_json(input_json)
+        edition_title, edition_number, edition_date, ficha_tecnica, editorial, articles, csv_data = process_json(input_json)
 
+        # Display edition information
+        st.subheader("Informações da Edição")
+        st.write(f"Título da Edição: {edition_title}")
+        st.write(f"Data da Edição: {edition_date}")
+        st.write(f"Número da Edição: {edition_number}")
+
+        
+        
         # Display ficha tecnica and editorial
         st.subheader("Ficha Técnica")
         st.write(ficha_tecnica)
