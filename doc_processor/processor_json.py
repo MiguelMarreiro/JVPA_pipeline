@@ -69,6 +69,11 @@ if __name__ == "__main__":
         st.write(f"Data da Edição: {edition_date}")
         st.write(f"Número da Edição: {edition_number}")
 
+        # Display CSV preview
+        st.subheader("CSV Preview")
+        df = pd.DataFrame(csv_data)
+        st.dataframe(df)
+
         # Generate CSV file for download
         csv_file = generate_csv(csv_data)
         with open(csv_file, "rb") as f:
@@ -88,10 +93,6 @@ if __name__ == "__main__":
         st.write(f"Autor: {editorial.get('autor', '')}")
         st.write(f"Corpo: {editorial.get('corpo', '')}")
 
-        # Display CSV preview
-        st.subheader("CSV Preview")
-        df = pd.DataFrame(csv_data)
-        st.dataframe(df)
 
 
         # Display article bodies
