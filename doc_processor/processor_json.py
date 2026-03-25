@@ -22,7 +22,6 @@ def process_json(input_json):
     csv_data = []
     for article in articles:
         csv_data.append({
-            "edition_title": edition_title,
             "edition_date": edition_date,
             "edition_number": edition_number,
             "titulo": article.get("titulo", ""),
@@ -31,6 +30,7 @@ def process_json(input_json):
             "paginas": article.get("paginas", ""),
             "num_imagens": article.get("num_imagens", 0),
             "tags": ", ".join(article.get("tags", [])),
+            "edition_title": edition_title,
             "corpo": article.get("corpo", "")
         })
 
@@ -43,8 +43,8 @@ def generate_csv(csv_data):
     csv_file = "articles_output.csv"
     with open(csv_file, mode="w", newline="", encoding="utf-8") as csvfile:
         fieldnames = [
-            "edition_title", "edition_date", "edition_number", "titulo", "subtitulo", "autor",
-            "paginas", "num_imagens", "tags", "corpo"
+            "edition_date", "edition_number", "titulo", "subtitulo", "autor",
+            "paginas", "num_imagens", "tags","edition_title", "corpo"
         ]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
